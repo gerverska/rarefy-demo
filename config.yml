@@ -1,0 +1,13 @@
+name: /home/gerverska/projects/rarefy-demo/env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-phyloseq
+  - r-markdown
+  - r-remotes
+  - r-rmarkdown
+  - r-tidyverse
+  - r-vegan
+prefix: /home/gerverska/projects/rarefy-demo/env
