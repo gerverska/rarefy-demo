@@ -52,7 +52,7 @@ The following package dependencies were installed and managed with
 
 Install this environment from `config.yml` using the `build.sh` script,
 included in the `rarefy-demo` repo. **Run on the command line; the code
-block won’t produce any output.**
+block won’t produce any output when run from within README.rmd.**
 
 ``` bash
 # Clone the repository ####
@@ -84,6 +84,8 @@ building
 
 ### Load packages and set directories
 
+[Return](#Demonstration)
+
 After opening this `README.rmd` in RStudio, I’ll install and load the R
 packages I’ll need by running the code block below
 
@@ -105,6 +107,8 @@ logs <- file.path(out, 'logs')
 ```
 
 ### Make a phyloseq object
+
+[Return](#Demonstration)
 
 `phyloseq` is an R package that lets me combine all the data relevant
 for my metabarcoding project (e.g., sample metadata, a sample x OTU
@@ -169,7 +173,7 @@ str(ref.seq)
       .. .. ..@ xp_list                    :List of 1
       .. .. .. ..$ :<externalptr> 
       .. .. ..@ .link_to_cached_object_list:List of 1
-      .. .. .. ..$ :<environment: 0x55a36a62ab98> 
+      .. .. .. ..$ :<environment: 0x55ac5646adc0> 
       ..@ ranges         :Formal class 'GroupedIRanges' [package "XVector"] with 7 slots
       .. .. ..@ group          : int [1:218] 1 1 1 1 1 1 1 1 1 1 ...
       .. .. ..@ start          : int [1:218] 1 140 288 435 581 728 900 1045 1191 1352 ...
@@ -183,7 +187,7 @@ str(ref.seq)
       ..@ metadata       : list()
 
 The input data shown here has already undergone sample and OTU filtering
-(e.g., controls have been removed, and OTUs mostly found in negative
+(i.e., controls have been removed, and OTUs mostly found in negative
 controls have been removed). `phyloseq` has
 [functions](https://joey711.github.io/phyloseq/preprocess.html) that can
 help trim away these samples and OTUs, but there are many ways in which
@@ -227,14 +231,15 @@ only made things more confusing for the field.
 #### Why would I want to normalize read counts across samples with different sequencing depth?
 
 Because these differences are the result of methodological artifacts
-that can affect our estimates of alpha-diversity and beta-diversity.
-Samples with more reads are likely to appear richer than samples with
-fewer reads, and samples with many reads have a higher chance of looking
-similar to other well sequenced samples. Altogether, these differences
-can distort the perception of the underlying ecological reality. This is
-largely because well sequenced samples have greater **coverage** than
-poorly sequenced samples. That is, well sequenced samples likely capture
-more complete ecological pictures (coverage = sample completeness).
+(all the way from extraction and during sequencing itself) that can
+affect our estimates of alpha-diversity and beta-diversity. Samples with
+more reads are likely to appear richer than samples with fewer reads,
+and samples with many reads have a higher chance of looking similar to
+other well sequenced samples. Altogether, these differences can distort
+the perception of the underlying ecological reality. This is largely
+because well sequenced samples have greater **coverage** than poorly
+sequenced samples. That is, well sequenced samples likely capture more
+complete ecological pictures (coverage = sample completeness).
 
 The method described for `rarefy_even_depth()` is an imperfect way of
 fixing the coverage problem, mainly because it represents a single
@@ -428,28 +433,33 @@ but finding the right package or approach to make this happen can be
 tricky.
 
 While I could use `vegan` to estimate richness at a given sequencing
-depth, estimating the Shannon and Simpson indices of diversity might
-require an alternate approach. Also, the process I used to identify a
-target sequencing depth was not incredibly detailed. The `iNEXT` package
+depth, estimating the Shannon and Simpson indices of diversity require
+an alternate approach. Also, the process I used to identify a target
+sequencing depth above was not incredibly detailed. The `iNEXT` package
 can address both of these concerns.
 
 ### Using iNEXT
 
+[Return](#Demonstration)
+
 Earlier I introduced the concept of **coverage**, which essentially
 quantifies how completely a sample has been surveyed. More concretely,
-this concept can be thought of as *the proportion of reads in sample
-represented by undetected OTUs*. Interestingly, this proportion can be
-estimated from the data itself using concepts originated by Alan Turing
-and other early investigators.
+this concept can be thought of as *the proportion of reads in a sample
+represented by OTUs previously detected in that sample*. Interestingly,
+this proportion can be estimated from the data itself using concepts
+originated by Alan Turing and other early investigators.
 
 #### Why care about coverage?
 
 The whole idea of performing “rarefaction” at a target sequencing depth,
-whether it was initially recognized or not, was simply and imperfect way
+whether it was initially recognized or not, was simply an imperfect way
 to account for differences in coverage between samples. As long as
 samples achieve the same level of coverage, the desired outcome of
 rarefaction has been achieved. **However, different samples can reach
-the same level of coverage with more or fewer reads!**
+the same level of coverage with more or fewer reads!** Given the
+impossibility of finding a single sequencing depth that achieves similar
+coverage across samples,`iNEXT` instead allows for rarefaction to a
+specified level of coverage.
 
 ``` r
 # Obtain estimates of coverage/sample completeness with iNEXT ####
@@ -467,7 +477,10 @@ ggplot(coverage, aes(x = n, y = SC)) +
           axis.title.y = element_text(face = 'bold'))
 ```
 
-![](README_files/figure-gfm/coverage-1.png)<!-- -->
+![](README_files/figure-gfm/coverage-1.png)<!-- --> While it looks like
+more sequencing depth is generally associated with greater estimated
+coverage, there’s obviously more going on here. Some more poorly
+sequenced samples still have nearly complete sample coverage.
 
 **The main benefit of `iNEXT` comes from the fact that it can perform
 rarefaction on a specified level of estimated coverage instead of using
@@ -475,10 +488,11 @@ a one-size-fits-all level of sequencing depth.** By default, iNEXT
 calculates three different Hill numbers (*H*<sup>*q*=0</sup>,
 *H*<sup>*q*=1</sup>, *H*<sup>*q*=2</sup>) that can be converted to the
 three most common alpha-diversity indices used in ecology (richness,
-Shannon’s diversity, Simpson’s diversity). Using coverage-derived Hill
-numbers also allows different samples to be compared more intuitively
-according to a *replication principle* or a *doubling property*. It’s a
-little confusing, but the doubling property goes like this.
+Shannon’s diversity, Simpson’s diversity, respectively). Using
+coverage-derived Hill numbers also allows different samples to be
+compared more intuitively according to a *replication principle* or a
+*doubling property*. It’s a little confusing, but the doubling property
+works like this:
 
 1.  Suppose I have two samples that don’t share any taxa
 2.  Each sample has the same set of Hill numbers *and equal coverage*
@@ -486,7 +500,7 @@ little confusing, but the doubling property goes like this.
 4.  If all the above is true, then all Hill numbers (i.e., all
     alpha-diversity metrics) for the combined sample should also double.
 
-This seems like a very basic property that’d we’d prefer always to be
+This seems like a very basic property that we’d prefer always to be
 true, but it’s only true when samples are compared at the same level of
 coverage! Below calculates all three Hill numbers using the `iNEXT`
 package, specifying a coverage level (`level = 0.9999`) and a number of
@@ -497,22 +511,23 @@ should be greater than or equal to 1000 or 10000 for non-demos).
 # Obtain estimates of All with iNEXT ####
 div <- estimateD(otu.tab, base = 'coverage', level = 0.9999, nboot = 10)
 
-# Plot coverage against sequencing depth ####
+# Plot each alpha-diversity metric against sequencing depth ####
 ggplot(div, aes(color = Order.q, x = m, y = qD)) +
     geom_point() +
     scale_x_log10(n.breaks = 10) +
     xlab("\nSequence reads") +
     ylab("Hill number estimate\n") +
     labs(color = "q") +
+    
     theme_classic() +
     theme(text = element_text(size = 14),
           axis.title.x = element_text(face = 'bold'),
           axis.title.y = element_text(face = 'bold'))
 ```
 
-![](README_files/figure-gfm/calc-1.png)<!-- -->
-
-<!-- The three different Hill numbers mentioned that can be converted to the three most common indices used in ecology: -->
-<!-- *q* = 0 computes richness (no conversion needed). Strongly influenced by rare taxa -->
-<!-- *q* = 1 computes the exponential of Shannon's index of diversity. Moderately influenced by rare and common taxa. -->
-<!-- *q* = 2 computes the inverse of Simpson's index of diversity. Strongly influenced by common taxa. -->
+![](README_files/figure-gfm/calc-1.png)<!-- --> Plotting all
+alpha-diversity metrics for each sample altogether, the Hill number
+derived from *H*<sup>*q*=0</sup> (corresponding to the familiar
+richness), is, as expected, generally higher than *H*<sup>*q*=1</sup>
+(convertible to Shannon’s index diversity), followed by
+*H*<sup>*q*=2</sup>, which can be converted to Simpson’s index.
